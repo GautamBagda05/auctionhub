@@ -1,3 +1,4 @@
+
 # AuctionHub — Online Auction System
 ## Django + PostgreSQL + WebSockets (Channels) + Razorpay
 
@@ -169,3 +170,6 @@ Browser ──── ws://host/ws/auction/<id>/ ────► AuctionConsumer
 - [ ] Set `ALLOWED_HOSTS` to your domain
 - [ ] Configure `STATIC_ROOT` and run `collectstatic`
 - [ ] Use environment variables for all secrets
+=======
+# auctionhub
+
