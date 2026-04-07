@@ -1,0 +1,897 @@
+{% extends 'base.html' %} {% block title %} {{ auction.title }} — AuctionHub
+{%endblock %} {% block extra_head %}
+<style>
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 2.5rem;
+    padding: 2.5rem 0 4rem;
+    align-items: start;
+  }
+
+  .detail-image {
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    height: 420px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .detail-image img { width: 100%; height: 100%; object-fit: cover; }
+  .detail-image .big-emoji { font-size: 6rem; }
+
+  .detail-meta { margin-top: 1.5rem; }
+  .detail-cat {
+    font-size: 0.75rem; color: var(--gold); font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;
+  }
+  .detail-title {
+    font-family: "Cinzel", serif; font-size: 1.8rem;
+    font-weight: 700; line-height: 1.25; margin-bottom: 1rem;
+  }
+  .detail-desc { color: var(--text-muted); line-height: 1.8; font-size: 0.95rem; }
+  .detail-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 1rem; }
+  .chip {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 6px; padding: 5px 12px; font-size: 0.78rem;
+    color: var(--text-muted); display: flex; align-items: center; gap: 5px;
+  }
+
+  .bid-panel {
+    position: sticky; top: 80px;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden;
+  }
+  .bid-panel-head {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, var(--bg3) 0%, var(--bg2) 100%);
+  }
+  .live-dot {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 0.72rem; color: var(--green);
+    text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;
+  }
+  .live-dot::before {
+    content: ""; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--green); animation: pulse 1.5s infinite;
+  }
+  .live-dot.ended::before { background: var(--text-muted); animation: none; }
+  .live-dot.ended { color: var(--text-muted); }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.5; transform: scale(1.3); }
+  }
+
+  .current-bid-lbl {
+    font-size: 0.75rem; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .current-bid-val {
+    font-family: "DM Mono", monospace; font-size: 2.4rem;
+    color: var(--gold2); font-weight: 700; transition: color 0.4s;
+  }
+  .current-bid-val.flash { color: var(--green); }
+  .timer-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+  .time-remaining { font-family: "DM Mono", monospace; font-size: 1rem; color: var(--text); }
+  .bid-count { font-size: 0.8rem; color: var(--text-muted); }
+
+  /* Bid panel body */
+  .bid-panel-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  /* Bid row */
+  .bid-input-row {
+    display: flex !important;
+    flex-direction: row !important;   /* 🔥 FORCE HORIZONTAL */
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  /* Input */
+  .bid-input-row input {
+    flex: 0 0 140px;
+    padding: 14px;
+    font-family: "Cinzel", serif; /* 🔥 PREMIUM FONT */
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 0.5px;
+    border-radius: 8px;
+  }
+
+  /* Button */
+  .bid-input-row button {
+    flex: 0 0 auto;
+    width: auto !important;
+    min-width: 130px;
+    white-space: nowrap;
+  }
+  /* Override Bootstrap conflicts */
+  .bid-input-row .form-control {
+    width: 100% !important;
+    flex: 1 !important;
+  }
+
+  .bid-input-row input.form-control {
+    width: 100% !important;
+  }
+
+  .bid-input-row .btn {
+    width: auto !important;
+    display: inline-block !important;
+  }
+
+  .btn-block {
+    width: 100%;
+  }
+
+  /* FULL ISOLATION FIX */
+  .bid-row-fix {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 15px !important;
+    width: 100% !important;
+  }
+
+  /* Input */
+  .bid-row-fix input {
+    flex: 1 !important;
+    width: 100% !important;
+    padding: 12px !important;
+    border-radius: 8px;
+    border: 1px solid #333;
+    background: #111;
+    color: #fff;
+  }
+
+  /* Button */
+  .bid-row-fix button {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 130px;
+    padding: 12px 18px;
+    border-radius: 8px;
+    background: #d4a017;
+    color: #000;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: "Poppins", sans-serif; /* 🔥 UNIQUE FONT */
+    font-weight: 500;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    }
+
+  /* 🚨 BLOCK ALL GLOBAL CSS INTERFERENCE */
+  .bid-row-fix * {
+    display: initial;
+  }
+  /* WS status */
+  .ws-status { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--text-muted); padding: 4px 0; }
+  .ws-indicator { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); transition: background 0.3s; }
+  .ws-indicator.connected  { background: var(--green); }
+  .ws-indicator.connecting { background: var(--gold); animation: pulse 1s infinite; }
+
+  /* Inline bid feedback banner */
+  .bid-banner {
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+  }
+  .bid-banner.show {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  .bid-banner.success {
+    background: rgba(76, 175, 125, 0.15);
+    border: 1px solid rgba(76, 175, 125, 0.4);
+    color: #4ecb8d;
+  }
+  .bid-banner.error {
+    background: rgba(220, 53, 69, 0.12);
+    border: 1px solid rgba(220, 53, 69, 0.35);
+    color: #f87171;
+  }
+  .bid-banner.info {
+    background: rgba(212, 175, 55, 0.1);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    color: var(--gold);
+  }
+  .bid-banner .banner-icon { font-size: 1rem; flex-shrink: 0; }
+
+  /* Bid button loading state */
+  .btn-gold.loading {
+    opacity: 0.7;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  .btn-gold.loading::after {
+    content: " ⏳";
+  }
+
+  /* Toast Message */
+  #msgBox {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+  }
+
+.custom-msg {
+  background: linear-gradient(135deg, #1e1e1e, #2a2a2a);
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+  animation: slideIn 0.4s ease;
+}
+
+/* Animation */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+  /* Recent bids feed */
+  .bids-feed { margin-top: 0.5rem; }
+  .bids-feed h4 {
+    font-size: 0.72rem; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.1em;
+    margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
+  .bid-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+    font-size: 0.85rem; animation: fadeIn 0.4s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .bid-item:last-child { border-bottom: none; }
+  .bid-item .bidder   { color: var(--text); font-weight: 500; }
+  .bid-item .bid-amt  { font-family: "DM Mono", monospace; color: var(--gold2); font-size: 0.9rem; }
+  .bid-item .bid-time { color: var(--text-muted); font-size: 0.75rem; }
+
+  /* Winner banner */
+  .winner-banner {
+    background: linear-gradient(135deg, rgba(76,175,125,0.15) 0%, rgba(76,175,125,0.05) 100%);
+    border: 1px solid rgba(76,175,125,0.3);
+    border-radius: 10px; padding: 1.25rem; text-align: center;
+  }
+  .winner-banner h3 { color: var(--green); font-family: "Cinzel", serif; font-size: 1rem; }
+  .winner-banner p  { color: var(--text-muted); font-size: 0.85rem; margin: 4px 0 12px; }
+
+  /* Seller card */
+  .seller-card {
+    background: var(--bg3); border-radius: 10px; padding: 1.25rem;
+    display: flex; align-items: center; gap: 12px; margin-top: 1.5rem;
+  }
+  .seller-avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--gold-dim); border: 1.5px solid var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; color: var(--gold); font-family: "Cinzel", serif;
+  }
+  .seller-info .name { font-weight: 600; font-size: 0.95rem; }
+  .seller-info .role { font-size: 0.75rem; color: var(--gold); }
+
+  /* Create Free Account */
+  .create-account-link {
+    display: block; text-align: center; font-size: 0.82rem;
+    color: var(--gold); text-decoration: none;
+    padding: 6px 0 10px; letter-spacing: 0.02em;
+    border-bottom: 1px dashed rgba(212,175,55,0.25);
+    transition: color 0.2s, opacity 0.2s;
+  }
+  .create-account-link:hover { color: var(--gold2); text-decoration: underline; opacity: 0.85; }
+
+  /* Watchlist button */
+  .btn-watchlist {
+    width: 100%; display: flex; align-items: center; justify-content: center;
+    gap: 7px; padding: 10px 16px; background: transparent;
+    border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text-muted); font-size: 0.85rem; font-weight: 500;
+    cursor: pointer; transition: background 0.2s, border-color 0.2s, color 0.2s;
+  }
+  .btn-watchlist:hover    { background: var(--bg3); border-color: var(--gold); color: var(--gold); }
+  .btn-watchlist.watching { border-color: var(--gold); color: var(--gold); background: rgba(212,175,55,0.07); }
+
+  /* No bids empty state */
+  .no-bids-msg {
+    font-size: 0.83rem; color: var(--text-muted);
+    text-align: center; padding: 14px 0 6px;
+    font-style: italic; opacity: 0.7;
+  }
+
+  /* ── Toast notification (top-right) ────────────────────────────── */
+  .toast-stack {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 340px;
+  }
+  .toast-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    font-size: 0.87rem;
+    font-weight: 500;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    animation: toastIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+  .toast-item.toast-success {
+    background: #1a3a2a;
+    border: 1px solid rgba(76,175,125,0.5);
+    color: #4ecb8d;
+  }
+  .toast-item.toast-error {
+    background: #3a1a1a;
+    border: 1px solid rgba(220,53,69,0.5);
+    color: #f87171;
+  }
+  .toast-item.toast-info {
+    background: #2a2415;
+    border: 1px solid rgba(212,175,55,0.4);
+    color: var(--gold);
+  }
+  .toast-item .toast-icon { font-size: 1.1rem; margin-top: 1px; flex-shrink: 0; }
+  .toast-item .toast-text { line-height: 1.45; }
+  .toast-item .toast-title { font-weight: 700; margin-bottom: 2px; }
+  .toast-item .toast-sub   { font-size: 0.78rem; opacity: 0.8; }
+  .toast-item.toast-hide   { animation: toastOut 0.25s ease forwards; }
+
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateX(60px) scale(0.9); }
+    to   { opacity: 1; transform: translateX(0) scale(1); }
+  }
+  @keyframes toastOut {
+    from { opacity: 1; transform: translateX(0) scale(1); }
+    to   { opacity: 0; transform: translateX(60px) scale(0.9); }
+  }
+
+  @media (max-width: 900px) {
+    .detail-grid { grid-template-columns: 1fr; }
+    .bid-panel   { position: static; }
+    .toast-stack { top: 10px; right: 10px; left: 10px; max-width: none; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Toast notification stack ─────────────────────────────────── -->
+<div class="toast-stack" id="toastStack"></div>
+
+<div class="container page-pad">
+  <div class="detail-grid">
+
+    <!-- ══ LEFT ══════════════════════════════════════════════════════ -->
+    <div>
+      <div class="detail-image">
+        {% if auction.image %}
+          <img src="{{ auction.image.url }}" alt="{{ auction.title }}" />
+        {% else %}
+          <div class="big-emoji">
+            {% if auction.category == 'electronics' %}💻
+            {% elif auction.category == 'art' %}🎨
+            {% elif auction.category == 'jewelry' %}💎
+            {% elif auction.category == 'vehicles' %}🚗
+            {% elif auction.category == 'fashion' %}👗
+            {% elif auction.category == 'sports' %}⚽
+            {% elif auction.category == 'realestate' %}🏠
+            {% else %}📦{% endif %}
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="detail-meta">
+        <div class="detail-cat">{{ auction.get_category_display }}</div>
+        <h1 class="detail-title">{{ auction.title }}</h1>
+        <p class="detail-desc">{{ auction.description }}</p>
+
+        <div class="detail-chips">
+          <span class="chip">👁 {{ auction.views_count }} views</span>
+          <span class="chip">🔨 {{ auction.bid_count }} bids</span>
+          <span class="chip">📅 Listed {{ auction.created_at|date:"d M Y" }}</span>
+          {% if auction.reserve_price %}
+            <span class="chip">🎯 Reserve ₹{{ auction.reserve_price }}</span>
+          {% endif %}
+        </div>
+
+        <div class="seller-card">
+          <div class="seller-avatar">{{ auction.seller.username|first|upper }}</div>
+          <div class="seller-info">
+            <div class="name">{{ auction.seller.get_full_name|default:auction.seller.username }}</div>
+            <div class="role">Verified Seller</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ RIGHT ═════════════════════════════════════════════════════ -->
+    <div>
+      <div class="bid-panel">
+
+        {% if messages %}
+          <div id="msgBox">
+            {% for message in messages %}
+              <div class="custom-msg">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <!-- Head -->
+        <div class="bid-panel-head">
+          <div id="liveStatus" class="live-dot {% if not auction.is_active %}ended{% endif %}">
+            {% if auction.is_active %}Live Auction{% else %}Auction Ended{% endif %}
+          </div>
+          <div class="current-bid-lbl">Current Highest Bid</div>
+          <div class="current-bid-val" id="currentBid">₹{{ auction.highest_bid }}</div>
+          <div class="timer-row">
+            <div class="time-remaining" id="timeRemaining">⏱ {{ auction.time_remaining }}</div>
+            <div class="bid-count" id="bidCount">{{ auction.bid_count }} bid{{ auction.bid_count|pluralize }}</div>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="bid-panel-body">
+
+          <!-- WS status -->
+          <div class="ws-status">
+            <div class="ws-indicator connecting" id="wsIndicator"></div>
+            <span id="wsStatusText">Connecting…</span>
+          </div>
+
+          {% if user.is_authenticated %}
+            {% if auction.is_active %}
+              {% if auction.seller != user %}
+
+                <!-- BID INPUT -->
+              
+
+                <form method="POST" action="{% url 'place_bid' auction.pk %}">
+                  {% csrf_token %}
+
+                  <div class="bid-row-fix">
+                    <input
+                      type="number"
+                      name="amount"
+                      id="bidAmount"
+                      placeholder="₹ Your bid"
+                      min="{{ auction.highest_bid|add:'1' }}"
+                      required
+                    />
+
+                    <button type="submit">
+                      Bid Now
+                    </button>
+                  </div>
+                </form>
+                <!-- Inline feedback banner (below input) -->
+                <div class="bid-banner" id="bidBanner">
+                  <span class="banner-icon" id="bidBannerIcon"></span>
+                  <span id="bidBannerText"></span>
+                </div>
+
+                {% if user_highest_bid %}
+                  <div style="font-size:0.82rem; color:var(--text-muted);">
+                    Your current highest bid:
+                    <span style="color:var(--gold2); font-family:'DM Mono',monospace;">
+                      ₹{{ user_highest_bid.amount }}
+                    </span>
+                  </div>
+                {% endif %}
+
+              {% else %}
+                <div style="font-size:0.85rem; color:var(--text-muted); text-align:center; padding:6px 0;">
+                  This is your own listing.
+                </div>
+              {% endif %}
+
+            {% else %}
+              {% if auction.winner == user %}
+
+                {% if auction.payment and auction.payment.status == 'completed' %}
+                  
+                  <!-- ✅ PAYMENT DONE -->
+                  <div class="winner-banner">
+                    <h3>🎉 Payment Successful!</h3>
+                    <p>Congratulations! You have successfully purchased this item.</p>
+                    <div style="margin-top:10px; font-size:0.9rem; color:var(--text-muted);">
+                      Amount Paid:
+                      <strong style="color:var(--gold2);">₹{{ auction.current_bid }}</strong>
+                    </div>
+                  </div>
+
+                {% else %}
+
+                  <!-- 💳 SHOW PAY BUTTON -->
+                  <div class="winner-banner">
+                    <h3>🏆 You Won!</h3>
+                    <p>Congratulations! Complete your purchase below.</p>
+                    <a href="{% url 'payment' auction.pk %}" class="btn btn-gold"
+                      style="display:inline-block; padding:8px 20px; border-radius:8px; text-decoration:none;">
+                      Pay ₹{{ auction.current_bid }}
+                    </a>
+                  </div>
+
+                {% endif %}
+
+              {% else %}
+                <div style="font-size:0.85rem; color:var(--text-muted); text-align:center; padding:6px 0;">
+                  Auction ended.
+                  {% if auction.winner %}
+                    Winner: <strong style="color:var(--text);">{{ auction.winner.username }}</strong>
+                  {% endif %}
+                </div>
+              {% endif %}
+            {% endif %}
+
+          {% else %}
+            <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-gold"
+               style="display:block; text-align:center; text-decoration:none; padding:10px 0; border-radius:8px;">
+              Sign In to Bid
+            </a>
+          {% endif %}
+
+          <a href="{% url 'signup' %}" class="create-account-link">Create Free Account</a>
+
+          {% if user.is_authenticated and auction.seller != user %}
+            <button id="watchBtn"
+                    class="btn-watchlist {% if is_watching %}watching{% endif %}"
+                    onclick="toggleWatch()">
+              {% if is_watching %}💛 Watching{% else %}🤍 Add to Watchlist{% endif %}
+            </button>
+          {% endif %}
+
+          {% if user == auction.seller %}
+            <a href="{% url 'edit_auction' auction.pk %}" class="btn btn-outline"
+               style="display:block; text-align:center; text-decoration:none; padding:9px 0; border-radius:8px; font-size:0.85rem;">
+              ✏️ Edit Listing
+            </a>
+          {% endif %}
+
+          <!-- Bids feed -->
+          <div class="bids-feed">
+            <h4>Recent Bids</h4>
+            <div id="bidsFeed">
+              {% for bid in bids %}
+                <div class="bid-item">
+                  <span class="bidder">{{ bid.bidder.username }}</span>
+                  <span class="bid-amt">₹{{ bid.amount }}</span>
+                  <span class="bid-time">{{ bid.placed_at|date:"d M H:i" }}</span>
+                </div>
+              {% empty %}
+                <p class="no-bids-msg">No bids yet.</p>
+              {% endfor %}
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+<script>
+  const AUCTION_ID = Number("{{ auction.pk }}");
+  const IS_ACTIVE  = "{{ auction.is_active|yesno:'true,false' }}" === "true";
+  const IS_AUTH    = "{{ user.is_authenticated|yesno:'true,false' }}" === "true";
+  const CURR_USER  = "{{ user.username }}";
+
+  // ── Toast notification system ──────────────────────────────────────────────
+  function showToast(title, subtitle, type = 'success', duration = 4000) {
+    const stack = document.getElementById('toastStack');
+    const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+
+    const el = document.createElement('div');
+    el.className = `toast-item toast-${type}`;
+    el.innerHTML = `
+      <span class="toast-icon">${icons[type] || '📢'}</span>
+      <div class="toast-text">
+        <div class="toast-title">${title}</div>
+        ${subtitle ? `<div class="toast-sub">${subtitle}</div>` : ''}
+      </div>`;
+    stack.appendChild(el);
+
+    setTimeout(() => {
+      el.classList.add('toast-hide');
+      setTimeout(() => el.remove(), 300);
+    }, duration);
+  }
+
+  // ── Inline banner (below bid input) ───────────────────────────────────────
+  let bannerTimer = null;
+  function showBanner(msg, type, icon, persist = false) {
+    const banner = document.getElementById('bidBanner');
+    const text   = document.getElementById('bidBannerText');
+    const ico    = document.getElementById('bidBannerIcon');
+    if (!banner) return;
+
+    if (bannerTimer) clearTimeout(bannerTimer);
+
+    banner.className = `bid-banner ${type} show`;
+    text.textContent = msg;
+    ico.textContent  = icon;
+
+    if (!persist) {
+      bannerTimer = setTimeout(() => {
+        banner.classList.remove('show');
+      }, 4000);
+    }
+  }
+
+  function hideBanner() {
+    const banner = document.getElementById('bidBanner');
+    if (banner) banner.classList.remove('show');
+  }
+
+  // ── WebSocket ──────────────────────────────────────────────────────────────
+  let ws;
+  const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+  const wsUrl = `${proto}://${window.location.host}/ws/auction/${AUCTION_ID}/`;
+
+  function connectWS() {
+    setWsStatus('connecting', 'Connecting…');
+    ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      setWsStatus('connected', '🟢 Live updates active');
+    };
+
+    ws.onmessage = (e) => {
+      const data = JSON.parse(e.data);
+
+      if      (data.type === 'state')        handleState(data);
+      else if (data.type === 'bid_update')   handleBidUpdate(data);
+      else if (data.type === 'bid_success')  handleBidSuccess(data);
+      else if (data.type === 'auction_ended') handleEnded();
+      else if (data.type === 'error')        handleBidError(data.message);
+    };
+
+    ws.onclose = () => {
+      setWsStatus('disconnected', '⚠ Disconnected — reconnecting…');
+      setTimeout(connectWS, 3000);
+    };
+
+    ws.onerror = () => {
+      setWsStatus('disconnected', '⚠ Connection error');
+    };
+  }
+
+  function setWsStatus(state, text) {
+    document.getElementById('wsIndicator').className = 'ws-indicator ' + state;
+    document.getElementById('wsStatusText').textContent = text;
+  }
+
+  // ── Message handlers ───────────────────────────────────────────────────────
+
+  function handleState(data) {
+    if (data.current_bid)
+      document.getElementById('currentBid').textContent =
+        '₹' + parseFloat(data.current_bid).toLocaleString('en-IN');
+    if (data.bid_count != null)
+      document.getElementById('bidCount').textContent =
+        data.bid_count + ' bid' + (data.bid_count === 1 ? '' : 's');
+    if (data.time_remaining)
+      document.getElementById('timeRemaining').textContent = '⏱ ' + data.time_remaining;
+    if (data.recent_bids) renderBids(data.recent_bids);
+    if (data.status === 'ended') handleEnded();
+  }
+
+  // Auto remove messages after 3 sec
+    setTimeout(() => {
+      const box = document.getElementById("msgBox");
+      if (box) box.remove();
+      }, 3000);
+
+  function handleBidUpdate(data) {
+    // Update the displayed current bid with a flash
+    const el = document.getElementById('currentBid');
+    el.textContent = '₹' + parseFloat(data.amount).toLocaleString('en-IN');
+    el.classList.add('flash');
+    setTimeout(() => el.classList.remove('flash'), 800);
+
+    // Update bid count
+    if (data.bid_count != null)
+      document.getElementById('bidCount').textContent =
+        data.bid_count + ' bid' + (data.bid_count === 1 ? '' : 's');
+
+    // Raise minimum on input for next bid
+    const inputEl = document.getElementById('bidAmount');
+    if (inputEl) inputEl.min = parseFloat(data.amount) + 1;
+
+    // Add to feed
+    const feed  = document.getElementById('bidsFeed');
+    const noMsg = feed.querySelector('.no-bids-msg');
+    if (noMsg) noMsg.remove();
+
+    const row = document.createElement('div');
+    row.className = 'bid-item';
+    row.innerHTML = `
+      <span class="bidder">${data.bidder}</span>
+      <span class="bid-amt">₹${parseFloat(data.amount).toLocaleString('en-IN')}</span>
+      <span class="bid-time">${data.time}</span>`;
+    feed.prepend(row);
+    while (feed.children.length > 8) feed.lastElementChild.remove();
+
+    // If someone else outbid this user, show an info toast
+    if (data.bidder !== CURR_USER) {
+      showToast(
+        'New Bid Placed',
+        `${data.bidder} bid ₹${parseFloat(data.amount).toLocaleString('en-IN')}`,
+        'info', 3500
+      );
+    }
+  }
+
+  function handleBidSuccess(data) {
+    // Re-enable button
+    setBidBtnLoading(false);
+
+    const amt = '₹' + parseFloat(data.amount).toLocaleString('en-IN');
+
+    // 1. Big toast notification (top-right)
+    showToast(
+      'Bid Placed Successfully!',
+      `Your bid of ${amt} is now live.`,
+      'success', 5000
+    );
+
+    // 2. Inline banner below input
+    showBanner(`Your bid of ${amt} was placed successfully!`, 'success', '✅');
+  }
+
+  function handleBidError(message) {
+    setBidBtnLoading(false);
+
+    // 1. Toast
+    showToast('Bid Failed', message, 'error', 5000);
+
+    // 2. Inline banner
+    showBanner(message, 'error', '❌');
+  }
+
+  function handleEnded() {
+    const s = document.getElementById('liveStatus');
+    if (s) { s.textContent = 'Auction Ended'; s.classList.add('ended'); }
+  }
+
+  function renderBids(bids) {
+    const feed = document.getElementById('bidsFeed');
+    if (!bids.length) { feed.innerHTML = '<p class="no-bids-msg">No bids yet.</p>'; return; }
+    feed.innerHTML = bids.map(b => `
+      <div class="bid-item">
+        <span class="bidder">${b.bidder__username}</span>
+        <span class="bid-amt">₹${parseFloat(b.amount).toLocaleString('en-IN')}</span>
+        <span class="bid-time">${b.placed_at}</span>
+      </div>`).join('');
+  }
+
+  // ── Place bid ──────────────────────────────────────────────────────────────
+  function placeBid() {
+    if (!IS_AUTH) { location.href = '{% url "login" %}'; return; }
+
+    const input  = document.getElementById('bidAmount');
+    const amount = parseFloat(input.value);
+
+    // Client-side validation
+    if (!input.value || isNaN(amount) || amount <= 0) {
+      showBanner('Please enter a valid bid amount.', 'error', '❌');
+      return;
+    }
+    if (amount < parseFloat(input.min)) {
+      showBanner(`Bid must be at least ₹${parseFloat(input.min).toLocaleString('en-IN')}.`, 'error', '❌');
+      return;
+    }
+
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      showBanner('Still connecting — please wait a moment and try again.', 'info', '⏳');
+      if (!ws || ws.readyState === WebSocket.CLOSED) connectWS();
+      return;
+    }
+
+    // Show loading state
+    setBidBtnLoading(true);
+    showBanner('Submitting your bid…', 'info', '⏳', true);
+
+    ws.send(JSON.stringify({ type: 'place_bid', amount: amount }));
+    input.value = '';
+  }
+
+  function setBidBtnLoading(loading) {
+    const btn = document.getElementById('bidBtn');
+    if (!btn) return;
+    if (loading) {
+      btn.textContent = 'Placing…';
+      btn.classList.add('loading');
+    } else {
+      btn.textContent = 'Bid Now';
+      btn.classList.remove('loading');
+    }
+  }
+
+  // Enter key to bid
+  document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('bidAmount');
+    if (input) input.addEventListener('keydown', e => { if (e.key === 'Enter') placeBid(); });
+  });
+
+  // ── Watchlist ──────────────────────────────────────────────────────────────
+  function toggleWatch() {
+    fetch(`/auction/${AUCTION_ID}/watch/`, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCSRFToken() },
+    })
+    .then(r => r.json())
+    .then(data => {
+      const btn = document.getElementById('watchBtn');
+      if (data.status === 'added') {
+        btn.textContent = '💛 Watching';
+        btn.classList.add('watching');
+        showToast('Added to Watchlist', 'You\'ll be notified of new bids.', 'info', 3000);
+      } else {
+        btn.textContent = '🤍 Add to Watchlist';
+        btn.classList.remove('watching');
+      }
+    });
+  }
+
+  function getCSRFToken() {
+    return document.cookie.split('; ').find(r => r.startsWith('csrftoken'))?.split('=')[1];
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  if (IS_ACTIVE) connectWS();
+  else setWsStatus('disconnected', 'Auction has ended');
+
+  // Fallback timer poll every 30s
+  if (IS_ACTIVE) {
+    setInterval(() => {
+      fetch(`/auction/${AUCTION_ID}/updates/`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.time_remaining)
+            document.getElementById('timeRemaining').textContent = '⏱ ' + data.time_remaining;
+          if (data.status === 'ended') handleEnded();
+        });
+    }, 30000);
+  }
+</script>

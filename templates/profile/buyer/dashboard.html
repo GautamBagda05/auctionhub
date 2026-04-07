@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block title %}Buyer Dashboard — AuctionHub{% endblock %}
+
+{% block extra_head %}
+<style>
+  .dash-wrap { padding: 2.5rem 0 5rem; }
+  .dash-header { margin-bottom: 2rem; }
+  .dash-header h1 { font-family: 'Cinzel', serif; font-size: 1.8rem; font-weight: 700; }
+  .dash-header p  { color: var(--text-muted); margin-top: 4px; }
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 2.5rem; }
+  .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+  .stat-card .s-icon { font-size: 1.4rem; margin-bottom: 8px; }
+  .stat-card .s-val  { font-family: 'Cinzel', serif; font-size: 1.8rem; font-weight: 700; color: var(--gold2); }
+  .stat-card .s-lbl  { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .section-box { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 1.5rem; }
+  .section-box-head { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); }
+  .section-box-head h2 { font-family: 'Cinzel', serif; font-size: 1rem; font-weight: 700; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container dash-wrap">
+  <div class="dash-header">
+    <h1>Buyer Dashboard</h1>
+    <p>Hello, {{ request.user.first_name|default:request.user.username }} 👋 — track your bids and wins here.</p>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="s-icon">🔨</div>
+      <div class="s-val">{{ my_bids.count }}</div>
+      <div class="s-lbl">Bids Placed</div>
+    </div>
+    <div class="stat-card">
+      <div class="s-icon">🏆</div>
+      <div class="s-val">{{ won.count }}</div>
+      <div class="s-lbl">Auctions Won</div>
+    </div>
+    <div class="stat-card">
+      <div class="s-icon">🛍️</div>
+      <div class="s-val">{{ request.user.watchlist.count }}</div>
+      <div class="s-lbl">Watching</div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:2rem">
+    <a href="{% url 'auction_list' %}" class="btn btn-gold">Browse Live Auctions →</a>
+  </div>
+
+  <!-- Won Auctions -->
+  {% if won %}
+  <div class="section-box">
+    <div class="section-box-head">
+      <h2>🏆 Auctions Won</h2>
+    </div>
+    <table>
+      <thead><tr><th>Item</th><th>Winning Bid</th><th>Payment</th><th></th></tr></thead>
+      <tbody>
+        {% for auction in won %}
+        <tr>
+          <td><a href="{% url 'auction_detail' auction.pk %}" style="color:var(--text);text-decoration:none;font-weight:500">{{ auction.title|truncatechars:40 }}</a></td>
+          <td style="font-family:'DM Mono',monospace;color:var(--gold2)">₹{{ auction.current_bid }}</td>
+          <td>
+            {% if auction.payment.status == 'completed' %}
+              <span class="pill pill-active">Paid</span>
+            {% else %}
+              <span class="pill pill-pending">Pending</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if auction.payment.status != 'completed' %}
+              <a href="{% url 'payment' auction.pk %}" class="btn btn-gold btn-sm">Pay Now</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- Bid history -->
+  <div class="section-box">
+    <div class="section-box-head">
+      <h2>Recent Bids</h2>
+    </div>
+    <table>
+      <thead><tr><th>Auction</th><th>My Bid</th><th>Current Bid</th><th>Status</th><th>Time</th></tr></thead>
+      <tbody>
+        {% for bid in my_bids %}
+        <tr>
+          <td><a href="{% url 'auction_detail' bid.auction.pk %}" style="color:var(--text);text-decoration:none;font-weight:500">{{ bid.auction.title|truncatechars:35 }}</a></td>
+          <td style="font-family:'DM Mono',monospace">₹{{ bid.amount }}</td>
+          <td style="font-family:'DM Mono',monospace;color:var(--gold2)">₹{{ bid.auction.highest_bid }}</td>
+          <td>
+            {% if bid.auction.status == 'active' %}
+              {% if bid.amount == bid.auction.highest_bid %}
+                <span class="pill pill-active">Leading</span>
+              {% else %}
+                <span class="pill" style="background:rgba(224,82,82,0.1);color:var(--red)">Outbid</span>
+              {% endif %}
+            {% else %}
+              <span class="pill pill-ended">Ended</span>
+            {% endif %}
+          </td>
+          <td style="color:var(--text-muted);font-size:0.82rem">{{ bid.placed_at|date:"d M H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem">No bids yet. <a href="{% url 'auction_list' %}" style="color:var(--gold)">Start bidding →</a></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

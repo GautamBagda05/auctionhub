@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}Sign In — AuctionHub{% endblock %}
+
+{% block extra_head %}
+<style>
+  .auth-wrapper {
+    min-height: calc(100vh - 64px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 2rem 1rem;
+    background: radial-gradient(ellipse 60% 60% at 50% 30%,
+      rgba(200,153,42,0.08) 0%, transparent 70%), var(--bg);
+  }
+  .auth-box {
+    width: 100%; max-width: 420px;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 14px; padding: 2.5rem; box-shadow: var(--shadow);
+  }
+  .auth-header { text-align: center; margin-bottom: 2rem; }
+  .auth-logo { font-size: 2.2rem; margin-bottom: 0.75rem; }
+  .auth-header h1 {
+    font-family: 'Cinzel', serif; font-size: 1.6rem; font-weight: 700; color: var(--text);
+  }
+  .auth-header p { color: var(--text-muted); font-size: 0.875rem; margin-top: 4px; }
+  .auth-form { display: flex; flex-direction: column; gap: 1.1rem; }
+  .auth-footer { text-align: center; margin-top: 1.5rem; font-size: 0.875rem; color: var(--text-muted); }
+  .auth-footer a { color: var(--gold); text-decoration: none; }
+  .auth-footer a:hover { text-decoration: underline; }
+  .errorlist { list-style: none; font-size: 0.78rem; color: var(--red); margin-top: 4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-box">
+    <div class="auth-header">
+      <div class="auth-logo">🔨</div>
+      <h1>Welcome Back</h1>
+      <p>Sign in to your AuctionHub account</p>
+    </div>
+
+    <form method="post" class="auth-form">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="id_username">Username</label>
+        <input type="text" name="username" id="id_username"
+               class="form-control" placeholder="Enter your username"
+               value="{{ form.username.value|default:'' }}" autofocus />
+        {% if form.username.errors %}
+          <ul class="errorlist">{% for e in form.username.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label for="id_password">Password</label>
+        <input type="password" name="password" id="id_password"
+               class="form-control" placeholder="Enter your password" />
+        {% if form.password.errors %}
+          <ul class="errorlist">{% for e in form.password.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+        {% endif %}
+      </div>
+
+      {% if form.non_field_errors %}
+        <div style="background:rgba(224,82,82,0.1);border:1px solid var(--red);border-radius:7px;padding:10px 14px;font-size:0.85rem;color:var(--red)">
+          {% for e in form.non_field_errors %}{{ e }}{% endfor %}
+        </div>
+      {% endif %}
+
+      <button type="submit" class="btn btn-gold btn-block" style="margin-top:4px">
+        Sign In
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      Don't have an account? <a href="{% url 'signup' %}">Create one free</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

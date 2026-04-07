@@ -1,0 +1,368 @@
+{% extends 'base.html' %} {% block title %}{% if auction %}Edit Listing{% else
+%}List New Item{% endif %} — AuctionHub{% endblock %} {% block extra_head %}
+<style>
+  .form-page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 4rem;
+  }
+  .form-page-head {
+    margin-bottom: 2rem;
+  }
+  .form-page-head h1 {
+    font-family: "Cinzel", serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+  }
+  .form-page-head p {
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+  .form-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 2rem;
+  }
+  .form-section-title {
+    font-size: 0.75rem;
+    color: var(--gold);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin: 1.5rem 0 1rem;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .form-section-title:first-child {
+    margin-top: 0;
+  }
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.1rem;
+  }
+  .form-grid .full {
+    grid-column: span 2;
+  }
+  .form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 2rem;
+  }
+  .errorlist {
+    list-style: none;
+    font-size: 0.78rem;
+    color: var(--red);
+    margin-top: 4px;
+  }
+  .help-text {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+  .img-preview {
+    margin-top: 10px;
+    border-radius: 8px;
+    max-height: 200px;
+    display: none;
+  }
+
+  @media (max-width: 600px) {
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+    .form-grid .full {
+      grid-column: span 1;
+    }
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="form-page">
+  <div class="form-page-head">
+    <h1>{% if auction %}Edit Listing{% else %}List a New Item{% endif %}</h1>
+    <p>
+      {% if auction %}Update your auction details below.{% else %}Fill in the
+      details and set your starting bid to go live instantly.{% endif %}
+    </p>
+  </div>
+
+  <div class="form-card">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <!-- Item Info -->
+      <div class="form-section-title">Item Information</div>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Item Title *</label>
+          <input
+            type="text"
+            name="title"
+            class="form-control"
+            placeholder="e.g., Vintage Rolex Submariner 1969"
+            value="{{ form.title.value|default:'' }}"
+          />
+          {% if form.title.errors %}
+          <ul class="errorlist">
+            {% for e in form.title.errors %}
+            <li>{{ e }}</li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+        </div>
+
+        <div class="form-group full">
+          <label>Description *</label>
+          <textarea
+            name="description"
+            class="form-control"
+            rows="5"
+            placeholder="Describe the item — condition, history, unique features…"
+          >
+{{ form.description.value|default:'' }}</textarea
+          >
+          {% if form.description.errors %}
+          <ul class="errorlist">
+            {% for e in form.description.errors %}
+            <li>{{ e }}</li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label>Category *</label>
+          <select name="category" class="form-control">
+            <option value="">Select category…</option>
+            <option
+              value="electronics"
+              {%
+              if
+              form.category.value=""
+              ="electronics"
+              %}selected{%
+              endif
+              %}
+            >
+              💻 Electronics
+            </option>
+            <option
+              value="art"
+              {%
+              if
+              form.category.value=""
+              ="art"
+              %}selected{%
+              endif
+              %}
+            >
+              🎨 Art &amp; Collectibles
+            </option>
+            <option
+              value="fashion"
+              {%
+              if
+              form.category.value=""
+              ="fashion"
+              %}selected{%
+              endif
+              %}
+            >
+              👗 Fashion
+            </option>
+            <option
+              value="vehicles"
+              {%
+              if
+              form.category.value=""
+              ="vehicles"
+              %}selected{%
+              endif
+              %}
+            >
+              🚗 Vehicles
+            </option>
+            <option
+              value="realestate"
+              {%
+              if
+              form.category.value=""
+              ="realestate"
+              %}selected{%
+              endif
+              %}
+            >
+              🏠 Real Estate
+            </option>
+            <option
+              value="jewelry"
+              {%
+              if
+              form.category.value=""
+              ="jewelry"
+              %}selected{%
+              endif
+              %}
+            >
+              💎 Jewelry &amp; Watches
+            </option>
+            <option
+              value="sports"
+              {%
+              if
+              form.category.value=""
+              ="sports"
+              %}selected{%
+              endif
+              %}
+            >
+              ⚽ Sports &amp; Outdoors
+            </option>
+            <option
+              value="other"
+              {%
+              if
+              form.category.value=""
+              ="other"
+              %}selected{%
+              endif
+              %}
+            >
+              📦 Other
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Item Image</label>
+          <input
+            type="file"
+            name="image"
+            class="form-control"
+            accept="image/*"
+            onchange="previewImage(this)"
+          />
+          <div class="help-text">JPG, PNG, WebP — max 5MB</div>
+          <img id="imgPreview" class="img-preview" alt="Preview" />
+          {% if auction and auction.image %}
+          <img
+            src="{{ auction.image.url }}"
+            style="margin-top: 10px; border-radius: 8px; max-height: 140px"
+            alt="Current"
+          />
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Pricing -->
+      <div class="form-section-title">Pricing &amp; Duration</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Starting Bid (₹) *</label>
+          <input
+            type="number"
+            name="starting_bid"
+            class="form-control"
+            placeholder="100"
+            min="1"
+            step="0.01"
+            value="{{ form.starting_bid.value|default:'' }}"
+          />
+          {% if form.starting_bid.errors %}
+          <ul class="errorlist">
+            {% for e in form.starting_bid.errors %}
+            <li>{{ e }}</li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label
+            >Reserve Price (₹)
+            <span style="color: var(--text-muted); font-weight: 400"
+              >(optional)</span
+            ></label
+          >
+          <input
+            type="number"
+            name="reserve_price"
+            class="form-control"
+            placeholder="Minimum acceptable price"
+            min="1"
+            step="0.01"
+            value="{{ form.reserve_price.value|default:'' }}"
+          />
+          <div class="help-text">Auction won't complete below this price</div>
+        </div>
+
+        <div class="form-group full">
+          <label>Auction End Date &amp; Time *</label>
+          <input
+            type="datetime-local"
+            name="end_time"
+            class="form-control"
+            value="{{ form.end_time.value|default:'' }}"
+          />
+          {% if form.end_time.errors %}
+          <ul class="errorlist">
+            {% for e in form.end_time.errors %}
+            <li>{{ e }}</li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+          <div class="help-text">
+            Set when bidding closes (IST). Minimum 1 hour from now.
+          </div>
+        </div>
+      </div>
+
+      {% if form.non_field_errors %}
+      <div
+        style="
+          background: rgba(224, 82, 82, 0.1);
+          border: 1px solid var(--red);
+          border-radius: 7px;
+          padding: 10px 14px;
+          font-size: 0.85rem;
+          color: var(--red);
+          margin-top: 1rem;
+        "
+      >
+        {% for e in form.non_field_errors %}{{ e }}{% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-gold">
+          {% if auction %}💾 Save Changes{% else %}🔨 Go Live Now{% endif %}
+        </button>
+        <a href="{% url 'dashboard' %}" class="btn btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script>
+  function previewImage(input) {
+    const preview = document.getElementById("imgPreview");
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        preview.src = e.target.result;
+        preview.style.display = "block";
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+
+  // Set min datetime to 1 hour from now
+  const dtInput = document.querySelector('input[name="end_time"]');
+  if (dtInput && !dtInput.value) {
+    const now = new Date();
+    const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+    dtInput.min = local.toISOString().slice(0, 16);
+  }
+</script>
+{% endblock %}

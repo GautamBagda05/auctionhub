@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}My Profile — AuctionHub{% endblock %}
+
+{% block extra_head %}
+<style>
+  .profile-wrap { max-width: 680px; margin: 0 auto; padding: 2.5rem 1.5rem 5rem; }
+  .profile-header {
+    display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.75rem;
+  }
+  .profile-avatar-big {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: var(--gold-dim); border: 2px solid var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem; color: var(--gold); font-family: 'Cinzel', serif;
+    flex-shrink: 0; overflow: hidden;
+  }
+  .profile-avatar-big img { width: 100%; height: 100%; object-fit: cover; }
+  .profile-name { font-family: 'Cinzel', serif; font-size: 1.3rem; font-weight: 700; }
+  .profile-role {
+    display: inline-block; margin-top: 4px;
+    background: var(--gold-dim); color: var(--gold);
+    font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .profile-meta { display: flex; gap: 1rem; margin-top: 8px; flex-wrap: wrap; }
+  .profile-meta span { font-size: 0.82rem; color: var(--text-muted); }
+
+  .form-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 2rem; }
+  .form-card h2 { font-family: 'Cinzel', serif; font-size: 1rem; font-weight: 700; margin-bottom: 1.5rem; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  .form-grid { display: flex; flex-direction: column; gap: 1.1rem; }
+  .errorlist { list-style: none; font-size: 0.78rem; color: var(--red); margin-top: 4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-wrap">
+  <!-- Header card -->
+  <div class="profile-header">
+    <div class="profile-avatar-big">
+      {% if profile.avatar %}
+        <img src="{{ profile.avatar.url }}" alt="{{ request.user.username }}" />
+      {% else %}
+        {{ request.user.username|first|upper }}
+      {% endif %}
+    </div>
+    <div>
+      <div class="profile-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+      <div class="profile-role">{{ profile.role|capfirst }}</div>
+      <div class="profile-meta">
+        <span>📧 {{ request.user.email }}</span>
+        {% if profile.phone %}<span>📱 {{ profile.phone }}</span>{% endif %}
+        <span>📅 Joined {{ request.user.date_joined|date:"M Y" }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit form -->
+  <div class="form-card">
+    <h2>Edit Profile</h2>
+    <form method="post" enctype="multipart/form-data" class="form-grid">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label>Phone Number</label>
+        <input type="tel" name="phone" class="form-control"
+               placeholder="+91 98765 43210"
+               value="{{ profile.phone }}" />
+      </div>
+
+      <div class="form-group">
+        <label>Address</label>
+        <textarea name="address" class="form-control" rows="3"
+                  placeholder="Your delivery address">{{ profile.address }}</textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Bio</label>
+        <textarea name="bio" class="form-control" rows="3"
+                  placeholder="Tell others a bit about yourself">{{ profile.bio }}</textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Profile Photo</label>
+        <input type="file" name="avatar" class="form-control" accept="image/*" />
+        {% if profile.avatar %}
+          <div style="margin-top:8px;font-size:0.8rem;color:var(--text-muted)">
+            Current: <a href="{{ profile.avatar.url }}" target="_blank" style="color:var(--gold)">View photo</a>
+          </div>
+        {% endif %}
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:4px">
+        <button type="submit" class="btn btn-gold">Save Changes</button>
+        <a href="{% url 'dashboard' %}" class="btn btn-ghost">Back to Dashboard</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

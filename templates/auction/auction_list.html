@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% block title %}Browse Auctions — AuctionHub{% endblock %}
+
+{% block extra_head %}
+<style>
+  .browse-header {
+    background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 2.5rem 0 0;
+  }
+  .browse-header h1 {
+    font-family: 'Cinzel', serif; font-size: 2rem; font-weight: 700; margin-bottom: 1.5rem;
+  }
+  /* Filters bar */
+  .filter-bar {
+    display: flex; flex-wrap: wrap; gap: 10px; padding-bottom: 1.5rem; align-items: center;
+  }
+  .search-wrap {
+    flex: 1; min-width: 220px; position: relative;
+  }
+  .search-wrap input { padding-left: 38px; }
+  .search-wrap .search-icon {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    color: var(--text-muted); font-size: 0.9rem; pointer-events: none;
+  }
+  .filter-select { width: auto; min-width: 140px; }
+  .filter-bar .results-count { margin-left: auto; font-size: 0.82rem; color: var(--text-muted); }
+
+  /* Category pills */
+  .cat-pills { display: flex; gap: 8px; flex-wrap: wrap; padding-bottom: 1rem; }
+  .cat-pill {
+    padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 500;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--text-muted); cursor: pointer; text-decoration: none;
+    transition: all 0.2s;
+  }
+  .cat-pill:hover, .cat-pill.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+
+  /* Grid */
+  .auctions-grid { padding: 2.5rem 0 4rem; }
+  .empty-state {
+    text-align: center; padding: 5rem 2rem; color: var(--text-muted);
+  }
+  .empty-state .emoji { font-size: 3rem; margin-bottom: 1rem; }
+  .empty-state h3 { font-family: 'Cinzel', serif; font-size: 1.2rem; color: var(--text); margin-bottom: 0.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="browse-header">
+  <div class="container">
+    <h1>Browse Auctions</h1>
+
+    <!-- Filter bar -->
+    <form method="get" class="filter-bar">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" name="search" class="form-control" placeholder="Search items…"
+               value="{{ search }}" />
+      </div>
+      <select name="sort" class="form-control filter-select" onchange="this.form.submit()">
+        <option value="newest"     {% if sort == 'newest'     %}selected{% endif %}>Newest First</option>
+        <option value="ending_soon"{% if sort == 'ending_soon'%}selected{% endif %}>Ending Soon</option>
+        <option value="most_bids"  {% if sort == 'most_bids'  %}selected{% endif %}>Most Bids</option>
+        <option value="price_low"  {% if sort == 'price_low'  %}selected{% endif %}>Price: Low → High</option>
+        <option value="price_high" {% if sort == 'price_high' %}selected{% endif %}>Price: High → Low</option>
+      </select>
+      <input type="number" name="min_price" class="form-control filter-select" placeholder="Min ₹" value="{{ request.GET.min_price }}" />
+      <input type="number" name="max_price" class="form-control filter-select" placeholder="Max ₹" value="{{ request.GET.max_price }}" />
+      <button type="submit" class="btn btn-gold">Apply</button>
+      {% if search or selected_category or request.GET.min_price %}
+        <a href="{% url 'auction_list' %}" class="btn btn-ghost">Clear</a>
+      {% endif %}
+      <span class="results-count">{{ auctions.count }} result{{ auctions.count|pluralize }}</span>
+    </form>
+
+    <!-- Category pills -->
+    <div class="cat-pills">
+      <a href="{% url 'auction_list' %}" class="cat-pill {% if not selected_category %}active{% endif %}">All</a>
+      {% for val, label in categories %}
+        <a href="?category={{ val }}{% if search %}&search={{ search }}{% endif %}"
+           class="cat-pill {% if selected_category == val %}active{% endif %}">{{ label }}</a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Results -->
+<div class="auctions-grid">
+  <div class="container">
+    {% if auctions %}
+    <div class="grid-3">
+      {% for auction in auctions %}
+      <a href="{% url 'auction_detail' auction.pk %}" style="text-decoration:none">
+        <div class="card auction-card">
+          <div class="img-wrap">
+            {% if auction.image %}
+              <img src="{{ auction.image.url }}" alt="{{ auction.title }}" />
+            {% else %}
+              <div class="img-placeholder">
+                {% if auction.category == 'electronics' %}💻
+                {% elif auction.category == 'art' %}🎨
+                {% elif auction.category == 'jewelry' %}💎
+                {% elif auction.category == 'vehicles' %}🚗
+                {% elif auction.category == 'fashion' %}👗
+                {% elif auction.category == 'sports' %}⚽
+                {% elif auction.category == 'realestate' %}🏠
+                {% else %}📦{% endif %}
+              </div>
+            {% endif %}
+            {% if auction.is_active %}
+              <span class="badge">Live</span>
+            {% else %}
+              <span class="badge ended">Ended</span>
+            {% endif %}
+          </div>
+          <div class="body">
+            <div class="cat">{{ auction.get_category_display }}</div>
+            <div class="title">{{ auction.title }}</div>
+            <div style="font-size:0.8rem;color:var(--text-muted);display:flex;gap:12px">
+              <span>{{ auction.bid_count }} bid{{ auction.bid_count|pluralize }}</span>
+              <span>{{ auction.views_count }} views</span>
+            </div>
+            <div class="bid-row">
+              <div>
+                <div class="bid-label">Current Bid</div>
+                <div class="bid-amount">₹{{ auction.highest_bid }}</div>
+              </div>
+              <div class="time-left">⏱ {{ auction.time_remaining }}</div>
+            </div>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="emoji">🔍</div>
+      <h3>No Auctions Found</h3>
+      <p>Try adjusting your filters or <a href="{% url 'auction_list' %}" style="color:var(--gold)">clear all filters</a></p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Payment{% endblock %}
+
+{% block content %}
+<div style="max-width:500px; margin:80px auto; background:#111; padding:30px; border-radius:12px; text-align:center;">
+
+  <h2 style="color:#4ecb8d;">💳 Dummy Payment</h2>
+
+  <p style="color:#aaa;">You are about to pay for:</p>
+
+  <h3 style="color:#fff;">{{ auction.title }}</h3>
+
+  <h1 style="color:#d4a017;">₹{{ auction.current_bid }}</h1>
+
+  <form method="POST">
+    {% csrf_token %}
+    <button type="submit"
+      style="margin-top:20px; padding:12px 25px; background:#d4a017; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">
+      Confirm Payment
+    </button>
+  </form>
+
+  <p style="margin-top:15px; font-size:0.8rem; color:#777;">
+    ⚠ This is a demo payment (no real money)
+  </p>
+
+</div>
+{% endblock %}

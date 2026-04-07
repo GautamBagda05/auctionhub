@@ -1,0 +1,307 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AuctionHub — Discover & Bid on Exclusive Items{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── Hero ───────────────────────────────────────────────── */
+  .hero {
+    position: relative; overflow: hidden;
+    min-height: 86vh;
+    display: flex; align-items: center;
+    background: radial-gradient(ellipse 80% 60% at 60% 40%,
+      rgba(200,153,42,0.12) 0%, transparent 70%),
+      var(--bg);
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c8992a' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+  .hero-inner {
+    position: relative; z-index: 1;
+    max-width: 1240px; margin: 0 auto; padding: 0 1.5rem;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center;
+  }
+  .hero-kicker {
+    font-size: 0.75rem; color: var(--gold); font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 1rem;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .hero-kicker::before { content: ''; display: block; width: 28px; height: 1.5px; background: var(--gold); }
+  .hero h1 {
+    font-family: 'Cinzel', serif; font-size: clamp(2.4rem, 5vw, 3.6rem);
+    font-weight: 900; line-height: 1.1; color: var(--text); margin-bottom: 1.25rem;
+  }
+  .hero h1 em { color: var(--gold2); font-style: normal; }
+  .hero p {
+    color: var(--text-muted); font-size: 1.05rem; max-width: 460px;
+    line-height: 1.7; margin-bottom: 2rem;
+  }
+  .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  .hero-stats {
+    display: flex; gap: 2rem; margin-top: 3rem; padding-top: 2rem;
+    border-top: 1px solid var(--border);
+  }
+  .stat-item .val {
+    font-family: 'Cinzel', serif; font-size: 1.6rem; font-weight: 700; color: var(--gold2);
+  }
+  .stat-item .lbl { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* ── Feature cards (right column) ───────────────────────── */
+  .hero-visual {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+  }
+  .feat-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.25rem;
+    transition: border-color 0.3s;
+  }
+  .feat-card:hover { border-color: rgba(200,153,42,0.3); }
+  .feat-card .icon { font-size: 1.6rem; margin-bottom: 0.75rem; }
+  .feat-card h4 { font-family: 'Cinzel', serif; font-size: 0.9rem; color: var(--text); margin-bottom: 4px; }
+  .feat-card p  { font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; }
+  .feat-card.span2 { grid-column: span 2; }
+
+  /* ── Section ─────────────────────────────────────────────── */
+  .section { padding: 4rem 0; }
+  .section:nth-child(even) { background: var(--bg2); }
+
+  /* ── Category chips ──────────────────────────────────────── */
+  .cat-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+  .cat-chip {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 18px; border-radius: 30px;
+    background: var(--bg3); border: 1px solid var(--border);
+    text-decoration: none; color: var(--text-muted); font-size: 0.875rem;
+    transition: all 0.2s;
+  }
+  .cat-chip:hover { border-color: var(--gold); color: var(--gold); }
+  .cat-chip .count {
+    background: var(--gold-dim); color: var(--gold);
+    font-size: 0.7rem; padding: 1px 7px; border-radius: 10px; font-family: 'DM Mono', monospace;
+  }
+
+  /* ── How it works ────────────────────────────────────────── */
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+  .step { text-align: center; position: relative; }
+  .step::after {
+    content: '→'; position: absolute; top: 20px; left: calc(50% + 44px);
+    color: var(--border); font-size: 1.2rem;
+  }
+  .step:last-child::after { display: none; }
+  .step-num {
+    width: 48px; height: 48px; border-radius: 50%;
+    border: 1.5px solid var(--gold); color: var(--gold);
+    font-family: 'Cinzel', serif; font-size: 1.1rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1rem;
+  }
+  .step h4 { font-family: 'Cinzel', serif; font-size: 0.95rem; margin-bottom: 6px; }
+  .step p  { font-size: 0.82rem; color: var(--text-muted); }
+
+  @media (max-width: 900px) {
+    .hero-inner { grid-template-columns: 1fr; }
+    .hero-visual { display: none; }
+    .steps { grid-template-columns: 1fr 1fr; }
+    .step::after { display: none; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── HERO ─────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-text">
+      <div class="hero-kicker">Live Bidding Platform</div>
+      <h1>Discover &amp; Win<br><em>Rare Items</em><br>At Auction</h1>
+      <p>Bid in real-time on electronics, art, jewelry, and more. Trusted by thousands of buyers and sellers across India.</p>
+      <div class="hero-actions">
+        <a href="{% url 'auction_list' %}" class="btn btn-gold btn-lg">Browse Auctions</a>
+        {% if not user.is_authenticated %}
+          <a href="{% url 'signup' %}" class="btn btn-outline btn-lg">Start Selling</a>
+        {% else %}
+          <a href="{% url 'create_auction' %}" class="btn btn-outline btn-lg">+ List an Item</a>
+        {% endif %}
+      </div>
+      <div class="hero-stats">
+        <div class="stat-item">
+          <div class="val">{{ total_auctions }}+</div>
+          <div class="lbl">Live Auctions</div>
+        </div>
+        <div class="stat-item">
+          <div class="val">{{ total_users }}+</div>
+          <div class="lbl">Members</div>
+        </div>
+        <div class="stat-item">
+          <div class="val">100%</div>
+          <div class="lbl">Secure Payments</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="feat-card">
+        <div class="icon">⚡</div>
+        <h4>Real-Time Bids</h4>
+        <p>WebSocket-powered live updates — see bids as they happen.</p>
+      </div>
+      <div class="feat-card">
+        <div class="icon">🔒</div>
+        <h4>Secure Payments</h4>
+        <p>Razorpay-protected transactions with escrow support.</p>
+      </div>
+      <div class="feat-card">
+        <div class="icon">🏆</div>
+        <h4>Win Instantly</h4>
+        <p>Automatic winner selection when the timer hits zero.</p>
+      </div>
+      <div class="feat-card">
+        <div class="icon">📲</div>
+        <h4>Instant Alerts</h4>
+        <p>Get notified the moment you're outbid or win.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FEATURED AUCTIONS ─────────────────────────────────────── -->
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <h2>🔥 Live Auctions</h2>
+      <a href="{% url 'auction_list' %}" class="see-all">View all →</a>
+    </div>
+    {% if featured %}
+    <div class="grid-3">
+      {% for auction in featured %}
+      <a href="{% url 'auction_detail' auction.pk %}" style="text-decoration:none">
+        <div class="card auction-card">
+          <div class="img-wrap">
+            {% if auction.image %}
+              <img src="{{ auction.image.url }}" alt="{{ auction.title }}" />
+            {% else %}
+              <div class="img-placeholder">
+                {% if auction.category == 'electronics' %}💻
+                {% elif auction.category == 'art' %}🎨
+                {% elif auction.category == 'jewelry' %}💎
+                {% elif auction.category == 'vehicles' %}🚗
+                {% elif auction.category == 'fashion' %}👗
+                {% else %}📦{% endif %}
+              </div>
+            {% endif %}
+            <span class="badge">Live</span>
+          </div>
+          <div class="body">
+            <div class="cat">{{ auction.get_category_display }}</div>
+            <div class="title">{{ auction.title }}</div>
+            <div class="bid-row">
+              <div>
+                <div class="bid-label">Current Bid</div>
+                <div class="bid-amount">₹{{ auction.highest_bid }}</div>
+              </div>
+              <div class="time-left {% if auction.time_remaining|slice:':1' == '0' %}urgent{% endif %}">
+                ⏱ {{ auction.time_remaining }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center; padding:4rem; color:var(--text-muted)">
+      <div style="font-size:3rem;margin-bottom:1rem">🔨</div>
+      <p>No live auctions yet. <a href="{% url 'signup' %}" style="color:var(--gold)">Be the first to list one!</a></p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- ── ENDING SOON ───────────────────────────────────────────── -->
+{% if ending_soon %}
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <h2>⏰ Ending Soon</h2>
+    </div>
+    <div class="grid-4">
+      {% for auction in ending_soon %}
+      <a href="{% url 'auction_detail' auction.pk %}" style="text-decoration:none">
+        <div class="card auction-card">
+          <div class="img-wrap" style="height:140px">
+            {% if auction.image %}
+              <img src="{{ auction.image.url }}" alt="{{ auction.title }}" />
+            {% else %}
+              <div class="img-placeholder">📦</div>
+            {% endif %}
+            <span class="badge" style="background:var(--red);color:#fff">Ending Soon</span>
+          </div>
+          <div class="body">
+            <div class="title" style="font-size:0.9rem">{{ auction.title }}</div>
+            <div class="bid-row">
+              <div class="bid-amount" style="font-size:0.95rem">₹{{ auction.highest_bid }}</div>
+              <div class="time-left urgent">⏱ {{ auction.time_remaining }}</div>
+            </div>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ── CATEGORIES ────────────────────────────────────────────── -->
+<section class="section">
+  <div class="container">
+    <div class="section-head"><h2>Browse by Category</h2></div>
+    <div class="cat-grid">
+
+      <a href="{% url 'auction_list' %}?category=electronics" class="cat-chip">💻 Electronics <span class="count">→</span></a>
+      <a href="{% url 'auction_list' %}?category=art"         class="cat-chip">🎨 Art &amp; Collectibles <span class="count">→</span></a>
+      <a href="{% url 'auction_list' %}?category=jewelry"     class="cat-chip">💎 Jewelry &amp; Watches <span class="count">→</span></a>
+      <a href="{% url 'auction_list' %}?category=fashion"     class="cat-chip">👗 Fashion <span class="count">→</span></a>
+      <a href="{% url 'auction_list' %}?category=vehicles"    class="cat-chip">🚗 Vehicles <span class="count">→</span></a>
+      <a href="{% url 'auction_list' %}?category=realestate"  class="cat-chip">🏠 Real Estate <span class="count">→</span></a>
+      <a href="{% url 'auction_list' %}?category=sports"      class="cat-chip">⚽ Sports <span class="count">→</span></a>
+      <a href="{% url 'auction_list' %}?category=other"       class="cat-chip">📦 Other <span class="count">→</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ──────────────────────────────────────────── -->
+<section class="section">
+  <div class="container">
+    <div class="section-head"><h2>How It Works</h2></div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h4>Create Account</h4>
+        <p>Sign up free as a buyer or seller in under a minute.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h4>Browse Auctions</h4>
+        <p>Explore thousands of live listings across every category.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h4>Place Your Bid</h4>
+        <p>Bid in real time and track updates via WebSocket live feed.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <h4>Win &amp; Pay Securely</h4>
+        <p>Winners pay instantly through Razorpay's secure gateway.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

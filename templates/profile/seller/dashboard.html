@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}Seller Dashboard — AuctionHub{% endblock %}
+
+{% block extra_head %}
+<style>
+  .dash-wrap { padding: 2.5rem 0 5rem; }
+  .dash-header { margin-bottom: 2rem; }
+  .dash-header h1 { font-family: 'Cinzel', serif; font-size: 1.8rem; font-weight: 700; }
+  .dash-header p  { color: var(--text-muted); margin-top: 4px; }
+
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 2.5rem; }
+  .stat-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.25rem;
+  }
+  .stat-card .s-icon { font-size: 1.4rem; margin-bottom: 8px; }
+  .stat-card .s-val  { font-family: 'Cinzel', serif; font-size: 1.8rem; font-weight: 700; color: var(--gold2); }
+  .stat-card .s-lbl  { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .section-box {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; margin-bottom: 1.5rem;
+  }
+  .section-box-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);
+  }
+  .section-box-head h2 { font-family: 'Cinzel', serif; font-size: 1rem; font-weight: 700; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container dash-wrap">
+  <div class="dash-header">
+    <h1>Seller Dashboard</h1>
+    <p>Welcome back, {{ request.user.first_name|default:request.user.username }} 👋</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="s-icon">📋</div>
+      <div class="s-val">{{ my_auctions.count }}</div>
+      <div class="s-lbl">Total Listings</div>
+    </div>
+    <div class="stat-card">
+      <div class="s-icon">🟢</div>
+      <div class="s-val">{{ active_count }}</div>
+      <div class="s-lbl">Live Now</div>
+    </div>
+    <div class="stat-card">
+      <div class="s-icon">🔨</div>
+      <div class="s-val">{{ total_bids }}</div>
+      <div class="s-lbl">Total Bids</div>
+    </div>
+  </div>
+
+  <!-- Quick action -->
+  <div style="margin-bottom:2rem">
+    <a href="{% url 'create_auction' %}" class="btn btn-gold">+ List New Item</a>
+  </div>
+
+  <!-- Listings table -->
+  <div class="section-box">
+    <div class="section-box-head">
+      <h2>My Listings</h2>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Category</th>
+          <th>Starting Bid</th>
+          <th>Current Bid</th>
+          <th>Bids</th>
+          <th>Status</th>
+          <th>Ends</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for auction in my_auctions %}
+        <tr>
+          <td><a href="{% url 'auction_detail' auction.pk %}" style="color:var(--text);text-decoration:none;font-weight:500">{{ auction.title|truncatechars:30 }}</a></td>
+          <td style="color:var(--text-muted)">{{ auction.get_category_display }}</td>
+          <td style="font-family:'DM Mono',monospace">₹{{ auction.starting_bid }}</td>
+          <td style="font-family:'DM Mono',monospace;color:var(--gold2)">₹{{ auction.highest_bid }}</td>
+          <td>{{ auction.bid_count }}</td>
+          <td>
+            {% if auction.status == 'active' and auction.is_active %}
+              <span class="pill pill-active">Live</span>
+            {% elif auction.status == 'ended' %}
+              <span class="pill pill-ended">Ended</span>
+            {% else %}
+              <span class="pill pill-pending">{{ auction.status|capfirst }}</span>
+            {% endif %}
+          </td>
+          <td style="color:var(--text-muted);font-size:0.82rem">{{ auction.end_time|date:"d M, H:i" }}</td>
+          <td>
+            <a href="{% url 'edit_auction' auction.pk %}" class="btn btn-ghost btn-sm">Edit</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:2rem">No listings yet. <a href="{% url 'create_auction' %}" style="color:var(--gold)">Create your first →</a></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
